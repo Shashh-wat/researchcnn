@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.DS_Store
+.env
+tmp_data/
+checkpoints/
+*.pt
+*.npz
+conformal_qhat.json
