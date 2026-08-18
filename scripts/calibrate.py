@@ -31,16 +31,31 @@ def main():
     q_hat = calibrator.calibrate(cal["scores"], cal["labels"])
     print(f"q_hat = {q_hat:.4f} (target coverage {1 - args.alpha:.0%})")
 
-    with open(args.out_json, "w") as f:
-        json.dump({"alpha": args.alpha, "q_hat": q_hat}, f, indent=2)
-
     sets = calibrator.predict_set(test["scores"])
     labels = test["labels"]
 
     covered = sum(1 for s, y in zip(sets, labels) if y in s)
     abstained = sum(1 for s in sets if len(s) != 1)
-    print(f"empirical test coverage: {covered / len(labels):.3f} (target {1 - args.alpha:.2f})")
-    print(f"abstained (set size != 1): {abstained}/{len(labels)} ({abstained / len(labels):.1%})")
+    coverage = covered / len(labels)
+    abstain_rate = abstained / len(labels)
+    print(f"empirical test coverage: {coverage:.3f} (target {1 - args.alpha:.2f})")
+    print(f"abstained (set size != 1): {abstained}/{len(labels)} ({abstain_rate:.1%})")
+
+    with open(args.out_json, "w") as f:
+        json.dump(
+            {
+                "alpha": args.alpha,
+                "q_hat": q_hat,
+                "n_calibration": int(len(cal["labels"])),
+                "n_test": int(len(labels)),
+                "empirical_coverage": coverage,
+                "target_coverage": 1 - args.alpha,
+                "abstain_rate": abstain_rate,
+            },
+            f,
+            indent=2,
+        )
+    print(f"saved calibration results to {args.out_json}")
 
 
 if __name__ == "__main__":

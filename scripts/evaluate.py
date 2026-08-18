@@ -2,10 +2,13 @@
 for downstream conformal calibration (scripts/calibrate.py).
 
 Run: python scripts/evaluate.py --checkpoint checkpoints/best.pt \
-        --manifest real_test.csv --synth-dir synth_test/ --out-npz test_scores.npz
+        --manifest real_test.csv --synth-dir synth_test/ \
+        --out-npz test_scores.npz --out-metrics test_metrics.json
 """
 import argparse
+import json
 import sys
+import time
 from pathlib import Path
 
 import numpy as np
@@ -28,6 +31,7 @@ def main():
     p.add_argument("--manifest", required=True)
     p.add_argument("--synth-dir", required=True)
     p.add_argument("--out-npz", default=None)
+    p.add_argument("--out-metrics", default=None, help="Path to write metrics as JSON (default: <checkpoint dir>/eval_metrics.json)")
     p.add_argument("--batch-size", type=int, default=None)
     args = p.parse_args()
 
@@ -63,6 +67,20 @@ def main():
     if args.out_npz:
         np.savez(args.out_npz, scores=scores, labels=labels)
         print(f"saved raw scores/labels to {args.out_npz}")
+
+    out_metrics_path = args.out_metrics or str(Path(args.checkpoint).parent / "eval_metrics.json")
+    record = {
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        "checkpoint": args.checkpoint,
+        "manifest": args.manifest,
+        "synth_dir": args.synth_dir,
+        "n_samples": int(len(labels)),
+        "metrics": {k: (float(v) if not isinstance(v, dict) else v) for k, v in metrics.items()},
+    }
+    Path(out_metrics_path).parent.mkdir(parents=True, exist_ok=True)
+    with open(out_metrics_path, "w") as f:
+        json.dump(record, f, indent=2)
+    print(f"saved metrics to {out_metrics_path}")
 
 
 if __name__ == "__main__":

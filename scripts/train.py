@@ -8,6 +8,7 @@ Data layout expected (architecture.md / dataset.py):
     --val-synth-dir  synth_val/
 """
 import argparse
+import json
 import sys
 import time
 from pathlib import Path
@@ -117,6 +118,20 @@ def move_to_device(batch, device, channels_last: bool):
     return real_img, synth_imgs, labels
 
 
+def log_metrics(ckpt_dir: str, epoch: int, metrics: dict, train_loss: float):
+    """Appends one line per validation pass to <ckpt_dir>/metrics_log.jsonl, so the full
+    training history is on disk even if the terminal/session is lost mid-run."""
+    Path(ckpt_dir).mkdir(parents=True, exist_ok=True)
+    record = {
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        "epoch": epoch,
+        "train_loss": train_loss,
+        **{k: (float(v) if not isinstance(v, dict) else v) for k, v in metrics.items()},
+    }
+    with open(f"{ckpt_dir}/metrics_log.jsonl", "a") as f:
+        f.write(json.dumps(record) + "\n")
+
+
 @torch.no_grad()
 def evaluate(model, loader, device, cfg, autocast_dtype):
     model.eval()
@@ -222,6 +237,7 @@ def main():
             metrics = evaluate(model, val_loader, device, cfg, amp_dtype)
             if is_main_process():
                 print(f"[val] epoch {epoch}: {metrics}", flush=True)
+                log_metrics(cfg.ckpt_dir, epoch, metrics, running_loss / len(train_loader))
                 if metrics["f1"] > best_f1:
                     best_f1 = metrics["f1"]
                     save_checkpoint(f"{cfg.ckpt_dir}/best.pt", model, optimizer, scheduler, scaler, epoch, best_f1, cfg)
