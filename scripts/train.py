@@ -52,6 +52,7 @@ def parse_args():
     p.add_argument("--d-model", type=int, default=None)
     p.add_argument("--n-heads", type=int, default=None)
     p.add_argument("--n-cross-layers", type=int, default=None)
+    p.add_argument("--warmup-steps", type=int, default=None)
     p.add_argument("--image-size", type=int, default=None,
                     help="Also derives resnet_grid = image_size // 32; vit_patch/freq_patch must divide it evenly")
     p.add_argument("--no-amp", action="store_true")
@@ -72,6 +73,7 @@ def build_config(args) -> Config:
         "k_draws": args.k_draws, "d_model": args.d_model, "amp_dtype": args.amp_dtype,
         "ckpt_dir": args.ckpt_dir, "resume_from": args.resume_from, "num_workers": args.num_workers,
         "n_heads": args.n_heads, "n_cross_layers": args.n_cross_layers,
+        "warmup_steps": args.warmup_steps,
     }
     for key, val in overrides.items():
         if val is not None:

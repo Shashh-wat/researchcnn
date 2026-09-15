@@ -1,0 +1,20 @@
+{
+  "timestamp": "2026-09-15T23:17:55",
+  "checkpoint": "mini_demo/checkpoints2/last.pt",
+  "manifest": "mini_demo/data2/real_test.csv",
+  "synth_dir": "mini_demo/data2/synth_pool",
+  "n_samples": 50,
+  "metrics": {
+    "accuracy": 0.52,
+    "precision": 0.4,
+    "recall": 0.4,
+    "f1": 0.4,
+    "auc": 0.5399999999999999,
+    "confusion_matrix": {
+      "tn": 18,
+      "fp": 12,
+      "fn": 12,
+      "tp": 8
+    }
+  }
+}

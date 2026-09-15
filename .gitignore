@@ -11,3 +11,6 @@ mini_demo/pool/
 mini_demo/data/
 mini_demo/checkpoints/
 mini_demo/*.npz
+mini_demo/pool2/
+mini_demo/data2/
+mini_demo/checkpoints2/

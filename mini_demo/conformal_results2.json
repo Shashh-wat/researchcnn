@@ -1,0 +1,9 @@
+{
+  "alpha": 0.1,
+  "q_hat": 0.8665373921394348,
+  "n_calibration": 50,
+  "n_test": 50,
+  "empirical_coverage": 0.9,
+  "target_coverage": 0.9,
+  "abstain_rate": 0.8
+}
