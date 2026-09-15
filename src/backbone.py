@@ -26,11 +26,14 @@ class SpatialCNNTokenizer(nn.Module):
 
 
 class SpatialViTTokenizer(nn.Module):
-    """ViT-B/16 patch tokens (CLS dropped) -> 196 tokens."""
+    """ViT-B/16 patch tokens (CLS dropped) -> (image_size/patch)^2 tokens."""
 
-    def __init__(self, d_model: int, vit_name: str = "vit_base_patch16_224", pretrained: bool = True):
+    def __init__(self, d_model: int, vit_name: str = "vit_base_patch16_224",
+                 pretrained: bool = True, image_size: int = 224):
         super().__init__()
-        self.vit = timm.create_model(vit_name, pretrained=pretrained, num_classes=0)
+        # img_size must be passed explicitly: timm defaults to 224 and mismatches any other
+        # input size (drops pretrained weights automatically when the size doesn't match).
+        self.vit = timm.create_model(vit_name, pretrained=pretrained, num_classes=0, img_size=image_size)
         self.num_prefix_tokens = getattr(self.vit, "num_prefix_tokens", 1)
         self.proj = nn.Linear(self.vit.embed_dim, d_model)
 
@@ -88,7 +91,8 @@ class Tokenizer(nn.Module):
     def __init__(self, cfg):
         super().__init__()
         self.cnn = SpatialCNNTokenizer(cfg.d_model, pretrained=cfg.pretrained_backbones)
-        self.vit = SpatialViTTokenizer(cfg.d_model, cfg.vit_name, pretrained=cfg.pretrained_backbones)
+        self.vit = SpatialViTTokenizer(cfg.d_model, cfg.vit_name, pretrained=cfg.pretrained_backbones,
+                                        image_size=cfg.image_size)
         self.freq = FrequencyTokenizer(cfg.d_model, patch=cfg.freq_patch)
         n_res = cfg.resnet_grid * cfg.resnet_grid
         n_vit = (cfg.image_size // cfg.vit_patch) ** 2

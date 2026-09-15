@@ -1,0 +1,20 @@
+{
+  "timestamp": "2026-09-15T22:41:21",
+  "checkpoint": "mini_demo/checkpoints/best.pt",
+  "manifest": "mini_demo/data/real_val.csv",
+  "synth_dir": "mini_demo/data/synth_pool",
+  "n_samples": 20,
+  "metrics": {
+    "accuracy": 0.6,
+    "precision": 0.5555555555555556,
+    "recall": 1.0,
+    "f1": 0.7142857142857143,
+    "auc": 0.53,
+    "confusion_matrix": {
+      "tn": 2,
+      "fp": 8,
+      "fn": 0,
+      "tp": 10
+    }
+  }
+}

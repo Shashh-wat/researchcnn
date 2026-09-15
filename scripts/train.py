@@ -50,6 +50,10 @@ def parse_args():
     p.add_argument("--lr", type=float, default=None)
     p.add_argument("--k-draws", type=int, default=None)
     p.add_argument("--d-model", type=int, default=None)
+    p.add_argument("--n-heads", type=int, default=None)
+    p.add_argument("--n-cross-layers", type=int, default=None)
+    p.add_argument("--image-size", type=int, default=None,
+                    help="Also derives resnet_grid = image_size // 32; vit_patch/freq_patch must divide it evenly")
     p.add_argument("--no-amp", action="store_true")
     p.add_argument("--amp-dtype", choices=["bf16", "fp16"], default=None)
     p.add_argument("--torch-compile", action="store_true")
@@ -67,10 +71,16 @@ def build_config(args) -> Config:
         "epochs": args.epochs, "batch_size": args.batch_size, "lr": args.lr,
         "k_draws": args.k_draws, "d_model": args.d_model, "amp_dtype": args.amp_dtype,
         "ckpt_dir": args.ckpt_dir, "resume_from": args.resume_from, "num_workers": args.num_workers,
+        "n_heads": args.n_heads, "n_cross_layers": args.n_cross_layers,
     }
     for key, val in overrides.items():
         if val is not None:
             setattr(cfg, key, val)
+    if args.image_size is not None:
+        cfg.image_size = args.image_size
+        cfg.resnet_grid = args.image_size // 32
+        if cfg.resnet_grid == 0:
+            raise ValueError("--image-size must be at least 32 (ResNet-50 downsamples by 32x)")
     if args.no_amp:
         cfg.use_amp = False
     if args.torch_compile:
