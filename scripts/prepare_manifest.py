@@ -79,9 +79,9 @@ def main():
     print(f"real_not_used pool: {len(not_used_pool)} -> train/val/test = {len(not_used_train)}/{len(not_used_val)}/{len(not_used_test)}")
     print(f"wrote manifests to {out_dir}/real_{{train,val,test}}.csv")
     print()
-    print("NEXT STEP: train a GAN on the images listed as label=1 in real_train.csv "
-          "(the real_used split) to produce the synthetic pool — no synth images exist yet.")
-
+    print("NEXT STEP: train the GAN on EVERY image in the real_used pool (run with --copy and use "
+          "<out-dir>/real_used), not just the real_train.csv rows. Label-1 images in val/test must also "
+          "be GAN training members or their labels are wrong.")
 
 if __name__ == "__main__":
     main()
