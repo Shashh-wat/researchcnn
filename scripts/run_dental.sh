@@ -68,8 +68,10 @@ make_pool() { # name seeds wanted
   if [ "$have" -ge "$3" ]; then say "pool $1 already complete ($have images), skipping"; return 0; fi
   set_status "generating pool $1 ($3 images)"
   case "$dir" in */synth_*) rm -rf "$dir" ;; esac
-  ( cd "$SG" && "$PY" generate.py --outdir="$dir" --seeds="$2" --trunc=1 --network="$PKL" ) \
-    || fail "generate.py failed for pool $1"
+  # StyleGAN prints long, harmless fallback warnings; keep them in a log, not on screen.
+  ( cd "$SG" && "$PY" generate.py --outdir="$dir" --seeds="$2" --trunc=1 --network="$PKL" \
+      > "$OUT/generate_$1.log" 2>&1 ) \
+    || { tail -n 15 "$OUT/generate_$1.log"; fail "generate.py failed for pool $1 (log: $OUT/generate_$1.log)"; }
 }
 make_pool synth_train 0-1999 2000
 make_pool synth_val 10000-10499 500
