@@ -63,7 +63,6 @@ def parse_args():
     p.add_argument("--ckpt-dir", default=None)
     p.add_argument("--resume-from", default=None)
     p.add_argument("--num-workers", type=int, default=None)
-    p.add_argument("--warmup-steps", type=int, default=None)
     return p.parse_args()
 
 
@@ -75,7 +74,6 @@ def build_config(args) -> Config:
         "ckpt_dir": args.ckpt_dir, "resume_from": args.resume_from, "num_workers": args.num_workers,
         "warmup_steps": args.warmup_steps,
         "n_heads": args.n_heads, "n_cross_layers": args.n_cross_layers,
-        "warmup_steps": args.warmup_steps,
     }
     for key, val in overrides.items():
         if val is not None:
