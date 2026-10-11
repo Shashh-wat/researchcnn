@@ -33,6 +33,7 @@ def main():
     p.add_argument("--out-npz", default=None)
     p.add_argument("--out-metrics", default=None, help="Path to write metrics as JSON (default: <checkpoint dir>/eval_metrics.json)")
     p.add_argument("--batch-size", type=int, default=None)
+    p.add_argument("--num-workers", type=int, default=2)
     args = p.parse_args()
 
     device = pick_device()
@@ -48,7 +49,7 @@ def main():
     model.eval()
 
     ds = RealSyntheticSetDataset(args.manifest, args.synth_dir, k=cfg.k_draws, image_size=cfg.image_size)
-    loader = DataLoader(ds, batch_size=cfg.batch_size, shuffle=False, num_workers=4)
+    loader = DataLoader(ds, batch_size=cfg.batch_size, shuffle=False, num_workers=args.num_workers)
 
     all_scores, all_labels = [], []
     with torch.no_grad():
