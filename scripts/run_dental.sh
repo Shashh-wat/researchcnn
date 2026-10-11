@@ -77,15 +77,44 @@ make_pool synth_train 0-1999 2000
 make_pool synth_val 10000-10499 500
 make_pool synth_eval 20000-20999 1000
 
+# The GPU is shared, so find the largest batch / draw count that actually fits right now.
+# Exit code 3 from the probe means "does not fit"; any other failure is a real error.
+pick_fit() {
+  if [ -n "${BATCH:-}" ] && [ -n "${KD:-}" ]; then return 0; fi
+  set_status "probing GPU memory for the largest batch that fits"
+  local pair b k rc
+  for pair in "8 8" "6 8" "4 8" "4 6" "4 4"; do
+    read -r b k <<< "$pair"
+    "$PY" "$REPO/scripts/probe_fit.py" "$b" "$k" > "$OUT/probe_${b}_${k}.log" 2>&1
+    rc=$?
+    say "probe batch=$b K=$k: $(grep -v -i warn "$OUT/probe_${b}_${k}.log" | tail -1)"
+    if [ "$rc" -eq 0 ]; then BATCH="$b"; KD="$k"; return 0; fi
+    if [ "$rc" -ne 3 ]; then tail -n 15 "$OUT/probe_${b}_${k}.log"; fail "GPU probe crashed (not a memory problem), see $OUT/probe_${b}_${k}.log"; fi
+  done
+  return 1
+}
+
+# On a busy shared GPU, keep retrying until WAIT_HOURS have passed (default 0 = try once).
+fit_with_wait() {
+  local deadline=$(( $(date +%s) + ${WAIT_HOURS:-0} * 3600 ))
+  while true; do
+    pick_fit && return 0
+    [ "$(date +%s)" -ge "$deadline" ] && return 1
+    set_status "waiting for free GPU memory (retrying every ${WAIT_SECS:-300}s)"
+    sleep "${WAIT_SECS:-300}"
+  done
+}
+
 if [ -f "$OUT/train.done" ]; then
   say "detector already trained, skipping (delete $OUT/train.done to retrain)"
 else
-  set_status "training detector ($EPOCHS epochs)"
+  fit_with_wait || fail "not even batch=4 K=4 fits in free GPU memory right now; the card is too busy (rerun with WAIT_HOURS=12 to wait for a gap)"
+  set_status "training detector ($EPOCHS epochs, batch=$BATCH, K=$KD)"
   PRE=""; [ "${NO_PRETRAINED:-0}" = 1 ] && PRE="--no-pretrained"
   ( cd "$REPO" && "$PY" scripts/train.py \
       --train-manifest "$DATA/real_train.csv" --train-synth-dir "$DATA/synth_train" \
       --val-manifest "$DATA/real_val.csv" --val-synth-dir "$DATA/synth_val" \
-      --batch-size 8 --k-draws 8 --epochs "$EPOCHS" --warmup-steps 30 \
+      --batch-size "$BATCH" --k-draws "$KD" --epochs "$EPOCHS" --warmup-steps 30 \
       --no-amp --grad-checkpointing --num-workers "$WORKERS" \
       --ckpt-dir "$OUT/checkpoints" $PRE ) || fail "detector training failed"
   touch "$OUT/train.done"
